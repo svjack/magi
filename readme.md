@@ -10,6 +10,111 @@
 [![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fhuggingface.co%2Fapi%2Fmodels%2Fragavsachdeva%2Fmagiv2%3Fexpand%255B%255D%3Ddownloads%26expand%255B%255D%3DdownloadsAllTime&query=%24.downloadsAllTime&label=%F0%9F%A4%97%20Downloads)](https://huggingface.co/ragavsachdeva/magiv2)
 [![Static Badge](https://img.shields.io/badge/%F0%9F%A4%97%20Spaces-Demo-blue)](https://huggingface.co/spaces/ragavsachdeva/Magiv2-Demo)
 
+```python
+#!/usr/bin/env python
+# coding: utf-8
+
+# 安装依赖
+get_ipython().system('pip install torch datasets huggingface_hub transformers scipy einops pulp shapely')
+
+# 导入必要的库
+from datasets import load_dataset
+import os
+from PIL import Image
+import numpy as np
+from transformers import AutoModel
+import torch
+
+# 加载《原神》漫画的英文数据集
+ds = load_dataset("svjack/Genshin-Impact-Manga-EN-US")
+
+# 加载《原神》角色插图数据集
+Genshin_Impact_Illustration_ds = load_dataset("svjack/Genshin-Impact-Illustration")["train"]
+ds_size = len(Genshin_Impact_Illustration_ds)
+name_image_dict = {}
+for i in range(ds_size):
+    row_dict = Genshin_Impact_Illustration_ds[i]
+    name_image_dict[row_dict["name"]] = row_dict["image"]
+
+# 保存图片的函数
+def save_images(name_image_dict, output_dir):
+    
+    # 确保输出目录存在
+    os.makedirs(output_dir, exist_ok=True)
+
+    # 遍历字典，保存图片
+    for name, image in name_image_dict.items():
+        # 构造文件路径
+        file_path = os.path.join(output_dir, f"{name}.png")  # 假设保存为 PNG 格式
+        # 保存图片
+        image.save(file_path)
+        print(f"Saved {file_path}")
+
+# 示例：保存图片到指定路径
+output_directory = "genshin_impact_images"  # 替换为你想保存图片的路径
+save_images(name_image_dict, output_directory)
+
+# 获取第一章的标题
+first_sTitle = ds["train"][0]["sTitle"]
+print(f"First chapter title: {first_sTitle}")
+
+# 提取第一章的所有页面图片
+chapter_pages_im = []
+for i in range(len(ds["train"])):
+    if ds["train"][i]["sTitle"] == first_sTitle:
+        chapter_pages_im.append(ds["train"][i]["image"])
+
+print(f"Number of pages in the first chapter: {len(chapter_pages_im)}")
+
+# 加载预训练模型
+model = AutoModel.from_pretrained("ragavsachdeva/magiv2", trust_remote_code=True).cuda().eval()
+
+# 读取图片的函数
+def read_image(image):
+    # 将 PIL.Image 转换为 RGB 格式的 numpy 数组
+    image = image.convert("L").convert("RGB")
+    image = np.array(image)
+    return image
+
+# 使用 chapter_pages_im 中的图片作为漫画页面
+chapter_pages = [read_image(image) for image in chapter_pages_im]
+
+# 使用 genshin_impact_images 中的图片作为角色图片
+character_bank = {
+    "images": [read_image(image) for image in name_image_dict.values()],  # 角色图片
+    "names": list(name_image_dict.keys())  # 角色名称（图片路径中的名称）
+}
+
+# 使用模型进行预测
+with torch.no_grad():
+    per_page_results = model.do_chapter_wide_prediction(chapter_pages, character_bank, use_tqdm=True, do_ocr=True)
+
+# 生成对话文本
+transcript = []
+for i, (image, page_result) in enumerate(zip(chapter_pages, per_page_results)):
+    # 可视化预测结果并保存为图片
+    model.visualise_single_image_prediction(image, page_result, f"page_{i}.png")
+    
+    # 获取说话者名称
+    speaker_name = {
+        text_idx: page_result["character_names"][char_idx] for text_idx, char_idx in page_result["text_character_associations"]
+    }
+    
+    # 遍历每一页的 OCR 结果
+    for j in range(len(page_result["ocr"])):
+        if not page_result["is_essential_text"][j]:
+            continue
+        name = speaker_name.get(j, "unsure")  # 如果找不到对应的角色名称，使用 "unsure"
+        transcript.append(f"<{name}>: {page_result['ocr'][j]}")
+
+# 将对话文本保存到文件
+with open("transcript.txt", "w") as fh:
+    for line in transcript:
+        fh.write(line + "\n")
+
+print("Transcript saved to transcript.txt")
+```
+
 # Table of Contents
 1. [Magiv1](#magiv1)
 2. [Magiv2](#magiv2)
