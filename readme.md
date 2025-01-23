@@ -14,12 +14,13 @@
 sudo apt-get update && sudo apt-get install cbm ffmpeg git-lfs
 ```
 
+- 人物指代不精确的版本（可以考虑使用tag进行改进）
 ```python
 #!/usr/bin/env python
 # coding: utf-8
 
 # 安装依赖
-get_ipython().system('pip install torch datasets huggingface_hub transformers scipy einops pulp shapely timm')
+#get_ipython().system('pip install torch datasets huggingface_hub transformers scipy einops pulp shapely timm')
 
 # 导入必要的库
 from datasets import load_dataset
@@ -28,6 +29,10 @@ from PIL import Image
 import numpy as np
 from transformers import AutoModel
 import torch
+
+# 配置输出路径
+output_dir = "first_sTitle_output_pages"  # 可配置的输出路径
+os.makedirs(output_dir, exist_ok=True)  # 确保路径存在
 
 # 加载《原神》漫画的英文数据集
 ds = load_dataset("svjack/Genshin-Impact-Manga-EN-US")
@@ -40,23 +45,98 @@ for i in range(ds_size):
     row_dict = Genshin_Impact_Illustration_ds[i]
     name_image_dict[row_dict["name"]] = row_dict["image"]
 
-# 保存图片的函数
-def save_images(name_image_dict, output_dir):
-    
-    # 确保输出目录存在
-    os.makedirs(output_dir, exist_ok=True)
+# 中英文映射字典
+name_mapping = {
+    '卡齐娜': 'Kachina',
+    '玛拉妮': 'Maranee',
+    '那维莱特': 'Navilette',
+    '菲米尼': 'Ferminet',
+    '娜维娅': 'Navia',
+    '阿蕾奇诺': 'Arlecchino',
+    '夏沃蕾': 'Chevreuse',
+    '克洛琳德': 'Clorinde',
+    '林尼': 'Lyney',
+    '琳妮特': 'Lynette',
+    '希格雯': 'Sigewinne',
+    '夏洛蒂': 'Charlotte',
+    '芙宁娜': 'Furina',
+    '千织': 'Chiori',
+    '莱欧斯利': 'Wriothesley',
+    '艾梅莉埃': 'Emilie',
+    '珐露珊': 'Faruzan',
+    '纳西妲': 'Nahida',
+    '卡维': 'Kaveh',
+    '妮露': 'Nilou',
+    '多莉': 'Dori',
+    '坎蒂丝': 'Candace',
+    '迪希雅': 'Dehya',
+    '流浪者': 'Wanderer',
+    '提纳里': 'Tighnari',
+    '艾尔海森': 'Alhaitham',
+    '赛索斯': 'Sethos',
+    '赛诺': 'Cyno',
+    '柯莱': 'Collei',
+    '莱依拉': 'Layla',
+    '行秋': 'Xingqiu',
+    '申鹤': 'Shenhe',
+    '辛焱': 'Xinyan',
+    '瑶瑶': 'Yaoyao',
+    '重云': 'Chongyun',
+    '七七': 'Qiqi',
+    '刻晴': 'Keqing',
+    '夜兰': 'Yelan',
+    '魈': 'Xiao',
+    '达达利亚': 'Tartaglia',
+    '甘雨': 'Ganyu',
+    '云堇': 'Yunjin',
+    '香菱': 'Xiangling',
+    '嘉明': 'Gaming',
+    '烟绯': 'Yanfei',
+    '闲云': 'Xianyun',
+    '北斗': 'Beidou',
+    '白术': 'Baizhu',
+    '钟离': 'Zhongli',
+    '凝光': 'Ningguang',
+    '胡桃': 'Hu Tao',
+    '雷电将军': 'Raiden Shogun',
+    '五郎': 'Gorou',
+    '九条裟罗': 'Kujou Sara',
+    '鹿野院平藏': 'Shikanoin Heizou',
+    '早柚': 'Sayu',
+    '八重神子': 'Yae Miko',
+    '久岐忍': 'Kuki Shinobu',
+    '绮良良': 'Kirara',
+    '珊瑚宫心海': 'Sangonomiya Kokomi',
+    '枫原万叶': 'Kaedehara Kazuha',
+    '神里绫人': 'Kamisato Ayato',
+    '神里绫华': 'Kamisato Ayaka',
+    '宵宫': 'Yoimiya',
+    '托马': 'Thoma',
+    '荒泷一斗': 'Arataki Itto',
+    '丽莎': 'Lisa',
+    '莫娜': 'Mona',
+    '安柏': 'Amber',
+    '迪卢克': 'Diluc',
+    '可莉': 'Klee',
+    '凯亚': 'Kaeya',
+    '诺艾尔': 'Noelle',
+    '菲谢尔': 'Fischl',
+    '罗莎莉亚': 'Rosaria',
+    '砂糖': 'Sucrose',
+    '优菈': 'Eula',
+    '琴': 'Jean',
+    '芭芭拉': 'Barbara',
+    '米卡': 'Mika',
+    '埃洛伊': 'Aloy',
+    '班尼特': 'Bennett',
+    '阿贝多': 'Albedo',
+    '迪奥娜': 'Diona',
+    '温迪': 'Venti',
+    '雷泽': 'Razor'
+}
 
-    # 遍历字典，保存图片
-    for name, image in name_image_dict.items():
-        # 构造文件路径
-        file_path = os.path.join(output_dir, f"{name}.png")  # 假设保存为 PNG 格式
-        # 保存图片
-        image.save(file_path)
-        print(f"Saved {file_path}")
-
-# 示例：保存图片到指定路径
-output_directory = "genshin_impact_images"  # 替换为你想保存图片的路径
-save_images(name_image_dict, output_directory)
+# 将 name_image_dict 的键替换为英文
+name_image_dict_en = {name_mapping[name]: image for name, image in name_image_dict.items()}
 
 # 获取第一章的标题
 first_sTitle = ds["train"][0]["sTitle"]
@@ -85,8 +165,8 @@ chapter_pages = [read_image(image) for image in chapter_pages_im]
 
 # 使用 genshin_impact_images 中的图片作为角色图片
 character_bank = {
-    "images": [read_image(image) for image in name_image_dict.values()],  # 角色图片
-    "names": list(name_image_dict.keys())  # 角色名称（图片路径中的名称）
+    "images": [read_image(image) for image in name_image_dict_en.values()],  # 角色图片
+    "names": list(name_image_dict_en.keys())  # 角色名称（图片路径中的名称）
 }
 
 # 使用模型进行预测
@@ -97,7 +177,9 @@ with torch.no_grad():
 transcript = []
 for i, (image, page_result) in enumerate(zip(chapter_pages, per_page_results)):
     # 可视化预测结果并保存为图片
-    model.visualise_single_image_prediction(image, page_result, f"page_{i}.png")
+    output_path = os.path.join(output_dir, f"page_{i}.png")
+    model.visualise_single_image_prediction(image, page_result, output_path)
+    print(f"Saved visualization to {output_path}")
     
     # 获取说话者名称
     speaker_name = {
@@ -112,11 +194,12 @@ for i, (image, page_result) in enumerate(zip(chapter_pages, per_page_results)):
         transcript.append(f"<{name}>: {page_result['ocr'][j]}")
 
 # 将对话文本保存到文件
-with open("transcript.txt", "w") as fh:
+transcript_path = os.path.join(output_dir, "transcript.txt")
+with open(transcript_path, "w", encoding="utf-8") as fh:
     for line in transcript:
         fh.write(line + "\n")
 
-print("Transcript saved to transcript.txt")
+print(f"Transcript saved to {transcript_path}")
 ```
 
 # Table of Contents
