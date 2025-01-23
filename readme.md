@@ -15,7 +15,7 @@
 # coding: utf-8
 
 # 安装依赖
-get_ipython().system('pip install torch datasets huggingface_hub transformers scipy einops pulp shapely')
+get_ipython().system('pip install torch datasets huggingface_hub transformers scipy einops pulp shapely timm')
 
 # 导入必要的库
 from datasets import load_dataset
