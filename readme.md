@@ -203,6 +203,7 @@ print(f"Transcript saved to {transcript_path}")
 ```
 
 - 使用tag 精确化判定人物名称的版本（可能后续还需要加入bbox 是否为人 等的判定，使用tag或者面积比率等）
+- 也可以考虑使得图片不是灰度的
 ```python
 #!/usr/bin/env python
 # coding: utf-8
