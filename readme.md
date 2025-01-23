@@ -317,6 +317,37 @@ print(f"Transcript saved to {transcript_path}")
 
 ![page_73 (1)](https://github.com/user-attachments/assets/335e6da3-1670-4753-a60a-e746d8eba11b)
 
+- 音乐style transformation
+```bash
+sudo apt-get update && sudo apt-get install git-lfs ffmpeg cbm
+pip install git+https://github.com/facebookresearch/audiocraft.git
+```
+
+```python
+import torchaudio
+from audiocraft.models import MusicGen
+from audiocraft.data.audio import audio_write
+
+model = MusicGen.get_pretrained('melody')
+model.set_generation_params(duration=8)  # generate 8 seconds.
+
+descriptions = ['happy rock', 'energetic EDM', 'sad jazz']
+
+melody, sr = torchaudio.load('bach.mp3')
+# generates using the melody from the given audio and the provided descriptions.
+wav = model.generate_with_chroma(descriptions, melody[None].expand(3, -1, -1), sr)
+
+for idx, one_wav in enumerate(wav):
+    # Will save under {idx}.wav, with loudness normalization at -14 db LUFS.
+    audio_write(f'{idx}', one_wav.cpu(), model.sample_rate, strategy="loudness")
+
+from IPython import display
+display.Audio("bach.mp3")
+display.Audio("0.wav")
+display.Audio("1.wav")
+display.Audio("2.wav")
+```
+
 
 # Table of Contents
 1. [Magiv1](#magiv1)
