@@ -310,6 +310,8 @@ with open(transcript_path, "w", encoding="utf-8") as fh:
 print(f"Transcript saved to {transcript_path}")
 ```
 
+![page_73](https://github.com/user-attachments/assets/5e1c72d4-0620-4bb3-8aea-afce010934e1)
+
 # Table of Contents
 1. [Magiv1](#magiv1)
 2. [Magiv2](#magiv2)
