@@ -348,6 +348,35 @@ display.Audio("1.wav")
 display.Audio("2.wav")
 ```
 
+```python
+from IPython import display
+display.Video("温迪.mp3")
+
+import torchaudio
+from audiocraft.models import MusicGen
+from audiocraft.data.audio import audio_write
+
+model = MusicGen.get_pretrained('melody')
+model.set_generation_params(duration=1 * 60 + 24)  # generate 8 seconds.
+
+descriptions = ['happy rock', 'energetic EDM', 'sad jazz']
+
+melody, sr = torchaudio.load('温迪.mp3')
+# generates using the melody from the given audio and the provided descriptions.
+wav = model.generate_with_chroma(descriptions, melody[None].expand(3, -1, -1), sr)
+
+for idx, one_wav in enumerate(wav):
+    # Will save under {idx}.wav, with loudness normalization at -14 db LUFS.
+    audio_write(f'{idx}', one_wav.cpu(), model.sample_rate, strategy="loudness")
+
+#### ffmpeg -i 0.wav -c:v libx264 -tune stillimage -c:a aac -b:a 192k -shortest 0.mp4
+```
+
+
+
+
+https://github.com/user-attachments/assets/5ccb2e56-d3c8-417c-926d-e04b3946ba80
+
 
 # Table of Contents
 1. [Magiv1](#magiv1)
