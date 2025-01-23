@@ -243,27 +243,31 @@ print(f"Number of pages in the first chapter: {len(chapter_pages_im)}")
 model = AutoModel.from_pretrained("ragavsachdeva/magiv2", trust_remote_code=True).cuda().eval()
 
 # 读取图片的函数
-def read_image(image):
+def read_image(image, grayscale=False):
     # 将 PIL.Image 转换为 RGB 格式的 numpy 数组
-    image = image.convert("L").convert("RGB")
+    if grayscale:
+        image = image.convert("L").convert("RGB")  # 转换为灰度图
+    else:
+        image = image.convert("RGB")  # 保持原色图
     image = np.array(image)
     return image
 
 # 使用 chapter_pages_im 中的图片作为漫画页面
-chapter_pages = [read_image(image) for image in chapter_pages_im]
+chapter_pages_grayscale = [read_image(image, grayscale=True) for image in chapter_pages_im]  # 灰度图用于推断
+chapter_pages_color = [read_image(image, grayscale=False) for image in chapter_pages_im]  # 原色图用于绘制
 
 # 使用空字典作为角色图片库
 character_bank = {
     "images": [], "names": []
 }
 
-# 使用模型进行预测
+# 使用模型进行预测（使用灰度图）
 with torch.no_grad():
-    per_page_results = model.do_chapter_wide_prediction(chapter_pages, character_bank, use_tqdm=True, do_ocr=True)
+    per_page_results = model.do_chapter_wide_prediction(chapter_pages_grayscale, character_bank, use_tqdm=True, do_ocr=True)
 
 # 生成对话文本
 transcript = []
-for i, (image, page_result) in enumerate(zip(chapter_pages, per_page_results)):
+for i, (image, page_result) in enumerate(zip(chapter_pages_color, per_page_results)):  # 使用原色图进行绘制
     # 更新角色名称
     for idx, bbox in enumerate(page_result["characters"]):
         # 裁剪图片
@@ -297,7 +301,7 @@ for i, (image, page_result) in enumerate(zip(chapter_pages, per_page_results)):
         name = speaker_name.get(j, "unsure")  # 如果找不到对应的角色名称，使用 "unsure"
         transcript.append(f"<{name}>: {page_result['ocr'][j]}")
 
-    # 可视化预测结果并保存为图片
+    # 可视化预测结果并保存为图片（使用原色图）
     output_path = os.path.join(output_dir, f"page_{i}.png")
     model.visualise_single_image_prediction(image, page_result, output_path)
     print(f"Saved visualization to {output_path}")
@@ -311,7 +315,8 @@ with open(transcript_path, "w", encoding="utf-8") as fh:
 print(f"Transcript saved to {transcript_path}")
 ```
 
-![page_73](https://github.com/user-attachments/assets/5e1c72d4-0620-4bb3-8aea-afce010934e1)
+![page_73 (1)](https://github.com/user-attachments/assets/335e6da3-1670-4753-a60a-e746d8eba11b)
+
 
 # Table of Contents
 1. [Magiv1](#magiv1)
