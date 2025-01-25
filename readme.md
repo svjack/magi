@@ -378,6 +378,9 @@ for idx, one_wav in enumerate(wav):
 https://github.com/user-attachments/assets/5ccb2e56-d3c8-417c-926d-e04b3946ba80
 
 
+- Another Text-to-X (have text to audio/music for sound or music)
+- https://github.com/Alpha-VLLM/Lumina-T2X
+
 # Table of Contents
 1. [Magiv1](#magiv1)
 2. [Magiv2](#magiv2)
